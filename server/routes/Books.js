@@ -10,6 +10,51 @@ const { userMiddleware } = require('../middleware/user')
 
 const bookRouter = Router();
 
+
+bookRouter.get('/filter', userMiddleware, async (req, res) => {
+    const userID = req.userId;
+    const { author, category, price, rating } = req.query;
+
+    const filter = { user_id: userID };
+
+    if (author) filter.author = { $regex: author, $options: 'i' };
+    if (category) filter.category = { $regex: category, $options: 'i' };
+    if (price) filter.price = { $gte: parseFloat(price) };
+    if (rating) filter.rating = { $gte: parseFloat(rating) };
+
+    try {
+        const books = await BookModel.findOne(filter);
+
+        if (books.length === 0) {
+            return res.status(404).json({ message: 'No books found matching the criteria' });
+        }
+
+        res.status(200).json(books);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ message: 'Error fetching books' });
+    }
+});
+
+bookRouter.get('/filter/:title', userMiddleware, async (req, res) => {
+    const userID = req.userId;
+    const title = req.params.title;
+    try {
+        const books = await BookModel.find({ user_id: userID, title: { $regex: title, $options: 'i' } });
+        if (!books) {
+            return res.status(404).json({ message: 'Books not found' });
+        }
+        if (books.length === 0) {
+            return res.status(404).json({ message: 'Books not found' });
+        }
+        res.status(200).json(books);
+    } catch (e) {
+        console.log(e)
+        res.status(500).json({ message: 'Error fetching books' });
+    }
+}
+)
+
 bookRouter.get('/all', async (req, res) => {
     try {
         const books = await BookModel.find({});
@@ -45,10 +90,10 @@ bookRouter.post('/create', userMiddleware, async (req, res) => {
 bookRouter.get('/:id', userMiddleware, async (req, res) => {
     const userID = req.userId;
     const bookID = req.params.id;
-    // to be done 
+
 
     try {
-        const books = await BookModel.findOne({ user_id: userID ,_id: bookID });
+        const books = await BookModel.findOne({ user_id: userID, _id: bookID });
         if (!books) {
             return res.status(404).json({ message: 'Book not found' });
         }
@@ -66,7 +111,7 @@ bookRouter.put('/:id', userMiddleware, async (req, res) => {
 
     const { title, author, category, price, rating } = req.body;
     try {
-        const BookUpdate = await BookModel.findOneAndUpdate({user_id: userID, _id: bookID}, {
+        const BookUpdate = await BookModel.findOneAndUpdate({ user_id: userID, _id: bookID }, {
             title: title,
             author: author,
             category: category,
@@ -100,6 +145,7 @@ bookRouter.delete('/:id', userMiddleware, async (req, res) => {
     }
 
 })
+
 
 module.exports = {
     bookRouter: bookRouter
