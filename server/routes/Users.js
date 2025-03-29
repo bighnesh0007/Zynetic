@@ -4,6 +4,8 @@ const bcrypt = require('bcrypt');
 
 const { UserModel } = require('../db');
 const { JWT_User_Pass } = require('../config')
+const userMiddleware = require('../middleware/user')
+const { BookModel } = require('../db')
 
 const userRouter = Router();
 
@@ -48,6 +50,10 @@ userRouter.post("/signin", async (req, res) => {
         res.status(500).json({ message: 'Error signing in' });
     }
 })
+
+
+
+
 
 module.exports = {
     userRouter: userRouter
